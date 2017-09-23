@@ -15,36 +15,31 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 def ocr(image_file):
     tools = pyocr.get_available_tools()
-    data = {}
     if len(tools) == 0:
-        data['ektp'] = 'Error no OCR tool found for processing'
-        return json.dumps(data)
+        print("No OCR tool found")
         sys.exit(1)
     # The tools are returned in the recommended order of usage
     tool = tools[0]
     print("Will use tool '%s'" % (tool.get_name()))
     # Ex: Will use tool 'libtesseract'
 
-    #langs = tool.get_available_languages()
-    #print("Available languages: %s" % ", ".join(langs))
-    #lang = langs[1]
-    #print("Will use lang '%s'" % (lang))
+    langs = tool.get_available_languages()
+    print("Available languages: %s" % ", ".join(langs))
+    lang = langs[1]
+    print("Will use lang '%s'" % (lang))
 
     txt = tool.image_to_string(
         Image.open(image_file),
-        #lang='OCR',
+        lang=lang,
         builder=pyocr.builders.TextBuilder()
     )
-    ektp_no = re.search( r'[?:nik\s*:\s*](\d{1,60})\s*', txt, re.I)
+    #ektp_no = re.search( r'[?:nik\s*:\s*](\d{1,20})\s*', txt, re.I)
     #print ektp_no
-    
-    if ektp_no:
+    #if ektp_no:
     #    print "ektp_no.group() : ", ektp_no.group()
-        data['ektp'] = ektp_no.group().strip()
-    else:
-        data['ektp'] = 'Error'
-            
-    return json.dumps(data)
+    #data = {}
+    #data['ektp'] = ektp_no.group().strip()
+    return txt
 
 @app.route("/")
 def index():
@@ -73,3 +68,5 @@ def upload():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
