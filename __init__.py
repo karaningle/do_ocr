@@ -6,6 +6,8 @@ import pyocr
 import pyocr.builders
 import re
 import json
+import base64
+
 
 __author__ = 'K_K_N'
 
@@ -13,7 +15,13 @@ app = Flask(__name__)
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-def ocr(image_file):
+
+def ocr(image_data):
+    imgdata = base64.b64decode(image_data)
+    print imgdata 	
+    src_path = os.path.join('/var/www/html/FlaskApp/FlaskApp/images','KTP2.png')
+    img_result = open(src_path,'w+')
+    img_result.write(imgdata)
     tools = pyocr.get_available_tools()
     if len(tools) == 0:
         print("No OCR tool found")
@@ -29,17 +37,19 @@ def ocr(image_file):
     print("Will use lang '%s'" % (lang))
 
     txt = tool.image_to_string(
-        Image.open(image_file),
+        Image.open(img_result),
         lang=lang,
         builder=pyocr.builders.TextBuilder()
     )
-    #ektp_no = re.search( r'[?:nik\s*:\s*](\d{1,20})\s*', txt, re.I)
+
+    img_result.close()
+    ektp_no = re.search( r'[?:nik\s*:\s*](\d{1,20})\s*', txt, re.I)
     #print ektp_no
-    #if ektp_no:
-    #    print "ektp_no.group() : ", ektp_no.group()
-    #data = {}
-    #data['ektp'] = ektp_no.group().strip()
-    return txt
+    if ektp_no:
+        print "ektp_no.group() : ", ektp_no.group()
+    data = {}
+    data['ektp'] = ektp_no.group().strip()
+    return json.dumps(data)
 
 @app.route("/")
 def index():
@@ -47,26 +57,11 @@ def index():
 
 @app.route("/upload", methods=['POST'])
 def upload():
-    target = os.path.join(APP_ROOT, 'images/')
-    print(target)
-
-    if not os.path.isdir(target):
-        os.mkdir(target)
-
-    for file in request.files.getlist("file"):
-        print(file)
-        filename = file.filename
-        destination = "/".join([target, filename])
-        print(destination)
-        file.save(destination)
-        #Return JSON
-        #print txt
-        #file.delete(destination)
-
-    return ocr(destination) 
-    #return json.dumps(txt)
+    im = {'data' : request.json['data']}
+    print im 
+    data_only = im['data']
+    return ocr(data_only) 
 
 if __name__ == "__main__":
     app.run(debug=True)
-
 
