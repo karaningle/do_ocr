@@ -33,17 +33,17 @@ def ocr(image_data):
 
     langs = tool.get_available_languages()
     print("Available languages: %s" % ", ".join(langs))
-    lang = langs[1]
-    print("Will use lang '%s'" % (lang))
+    #lang = langs[1]
+    #print("Will use lang '%s'" % (lang))
 
     txt = tool.image_to_string(
         Image.open(img_result),
-        lang=lang,
+        lang='OCR',
         builder=pyocr.builders.TextBuilder()
     )
 
     img_result.close()
-    ektp_no = re.search( r'[?:nik\s*:\s*](\d{1,20})\s*', txt, re.I)
+    ektp_no = re.search( r'[?:nik\s*:\s*](\d{8,20})\s*', txt, re.I)
     #print ektp_no
     if ektp_no:
         print "ektp_no.group() : ", ektp_no.group()
