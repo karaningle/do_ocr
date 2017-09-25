@@ -17,11 +17,9 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 
 def ocr(image_data):
-    imgdata = base64.b64decode(image_data)
-    print imgdata 	
-    src_path = os.path.join('/var/www/html/FlaskApp/FlaskApp/images','KTP2.png')
-    img_result = open(src_path,'w+')
-    img_result.write(imgdata)
+    #imgdata = base64.b64decode(image_data)
+    #img_result = open('temp.jpg','w+')
+    #img_result.write(imgdata)
     tools = pyocr.get_available_tools()
     if len(tools) == 0:
         print("No OCR tool found")
@@ -33,28 +31,21 @@ def ocr(image_data):
 
     langs = tool.get_available_languages()
     print("Available languages: %s" % ", ".join(langs))
-    #lang = langs[1]
-    #print("Will use lang '%s'" % (lang))
-
+    lang = langs[1]
+    print("Will use lang '%s'" % (lang))
     txt = tool.image_to_string(
-        Image.open(img_result),
+        Image.open(image_data),
         lang='OCR',
         builder=pyocr.builders.TextBuilder()
     )
 
-    img_result.close()
+    #img_result.close()
+    ektp_no = re.search( r'[?:nik\s*:\s*](\d{8,20})\s*', txt, re.I)
+    #print ektp_no
+    if ektp_no:
+        print "ektp_no.group() : ", ektp_no.group()
     data = {}
-    #print 'txt is %s' %txt
-    if txt and not txt.isspace():
-        ektp_no = re.search( r'[?:nik\s*:\s*](\d{8,20})\s*', txt, re.I)
-        #print ektp_no
-        if ektp_no:
-            print "ektp_no.group() : ", ektp_no.group()
-    	    data['ektp'] = ektp_no.group().strip()
-	else: 
-           data = {'ektp' : 'Error in image file'}
-    else:
-        data['ektp'] = 'Error in image file'
+    data['ektp'] = ektp_no.group().strip()
     return json.dumps(data)
 
 @app.route("/")
@@ -63,11 +54,13 @@ def index():
 
 @app.route("/upload", methods=['POST'])
 def upload():
-    im = {'data' : request.json['data']}
-    print im 
-    data_only = im['data']
-    return ocr(data_only) 
+    if 'file' in request.files:
+        file = request.files['file']
+        return ocr(file)
+    else: 
+        data = {}
+        data['error'] = 'File not found.'
+        return json.dumps(data)
 
 if __name__ == "__main__":
     app.run(debug=True)
-
